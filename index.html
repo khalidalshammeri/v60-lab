@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1916">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مختبر V60">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>مختبر V60</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Includes recipe builder. Layout idea: a brewing bench. Settings on one side; the brew station (countdown ring, scale target) and the pour timeline on the other. */
+:root{
+  --paper:#e9edea;
+  --surface:#fafbfa;
+  --ink:#13201c;
+  --muted:#5a6964;
+  --line:#cfd8d3;
+  --accent:#c4301c;
+  --accent-ink:#ffffff;
+  --water:#1c6b88;
+  --water-soft:#d7e8ee;
+  --coffee:#6a3d22;
+  --station:#0f1916;
+  --station-ink:#e9f2ee;
+  --display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1412;--surface:#151f1c;--ink:#e7eeea;--muted:#93a39c;--line:#2a3833;
+    --accent:#f0614a;--accent-ink:#1a0703;--water:#63b9d6;--water-soft:#1a333d;--coffee:#c08556;
+    --station:#060b09;--station-ink:#e9f2ee;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1412;--surface:#151f1c;--ink:#e7eeea;--muted:#93a39c;--line:#2a3833;
+  --accent:#f0614a;--accent-ink:#1a0703;--water:#63b9d6;--water-soft:#1a333d;--coffee:#c08556;
+  --station:#060b09;--station-ink:#e9f2ee;color-scheme:dark;
+}
+/* iPhone home-screen mode: respect the notch and home bar */
+body{padding-top:env(safe-area-inset-top)}
+.navbar{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.credit{padding-bottom:8px}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.7}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 0}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:8px 0 18px;border-bottom:2px solid var(--ink)}
+.brand{display:flex;align-items:baseline;gap:14px}
+.brand b{font-family:var(--mono);font-weight:600;font-size:clamp(44px,9vw,72px);line-height:.9;letter-spacing:-.04em;color:var(--accent);direction:ltr}
+.brand h1{font-family:var(--display);font-weight:700;font-size:clamp(24px,4.4vw,34px);margin:0;line-height:1.2}
+header p{margin:0;color:var(--muted);max-width:36ch;font-size:14.5px}
+.pager ol{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.pager button{font:inherit;width:100%;background:transparent;border:0;border-top:3px solid var(--line);color:var(--muted);padding:8px 2px 4px;cursor:pointer;text-align:start;display:grid;gap:0;min-height:52px}
+.pager button .k{font-family:var(--mono);font-size:12px;direction:ltr;text-align:right}
+.pager button .t{font-size:14px;font-weight:600;line-height:1.4}
+.pager button.past{border-top-color:var(--ink);color:var(--ink)}
+.pager button[aria-current="step"]{border-top-color:var(--accent);color:var(--ink)}
+.pager button[aria-current="step"] .k{color:var(--accent)}
+.summary{margin:12px 0 0;font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px}
+.summary b{color:var(--ink);font-weight:600}
+.summary[hidden]{display:none}
+.bench{margin-top:14px}
+section[hidden]{display:none}
+.credit{margin:18px 0 0;font-size:13.5px;color:var(--muted);text-align:center}
+.credit b{color:var(--ink);font-weight:600}
+.credit a{color:var(--accent)}
+.navbar{position:sticky;bottom:0;background:var(--paper);border-top:1px solid var(--line);margin-top:12px;padding:10px 0 14px;display:flex;gap:8px}
+.navbar button{font:inherit;font-weight:600;border-radius:4px;padding:10px 18px;cursor:pointer;min-height:48px;border:1px solid var(--ink);background:transparent;color:var(--ink)}
+.navbar .next{flex:1;background:var(--ink);color:var(--surface);font-size:16.5px}
+.navbar button[hidden]{display:none}
+.navbar[hidden],.pager[hidden],.homebtn[hidden]{display:none}
+section{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0;box-shadow:0 1px 0 var(--line),0 8px 24px -16px rgba(0,0,0,.35)}
+.homebtn{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 16px;min-height:38px;cursor:pointer}
+.homebtn:hover{border-color:var(--ink)}
+.hcard{display:flex;gap:16px;align-items:center;width:100%;text-align:start;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:12px;padding:18px;margin-bottom:12px;cursor:pointer;min-height:110px;transition:transform .15s,border-color .15s}
+.hcard.alt{border-inline-start-color:var(--water)}
+.hcard:hover{border-color:var(--ink);transform:translateY(-2px)}
+.hcard svg{flex:none;width:54px;height:54px;fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.hcard.alt svg{stroke:var(--water)}
+.hcard .ht{display:grid;gap:4px}
+.hcard b{font-family:var(--display);font-size:22px;line-height:1.3}
+.hcard .ht span{color:var(--muted);font-size:14.5px;line-height:1.6}
+.rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.rgrid{grid-template-columns:minmax(0,1fr)}}
+.rc{font:inherit;text-align:start;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:grid;gap:4px;align-content:start}
+.rc:hover{border-color:var(--ink)}
+.rc[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.rc[aria-pressed="true"] b::before{content:"✓ ";color:var(--accent)}
+.blive{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);margin:-20px -20px 16px;padding:10px 20px 12px;border-radius:12px 12px 0 0;display:grid;gap:8px}
+.bl-top{display:flex;flex-wrap:wrap;gap:2px 14px;font-size:13.5px;color:var(--muted)}
+.bl-top b{color:var(--ink);font-weight:600}
+.bl-m{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.blm span{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.blm .num{color:var(--ink);font-weight:600}
+.blm .track{height:6px;background:var(--water-soft);border-radius:3px;overflow:hidden;margin-top:3px}
+.blm .track i{display:block;height:100%;background:var(--water);transition:width .3s}
+.blm.hi .track i{background:var(--accent)}
+.bsug{margin:0 0 16px;border:1px dashed var(--line);border-radius:10px;padding:10px 14px}
+.bsug summary{cursor:pointer;font-size:14px;color:var(--muted);font-weight:500}
+.bsug[open] summary{color:var(--ink)}
+.rbar{position:sticky;bottom:0;display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border-top:1px solid var(--line);margin:18px -20px -20px;padding:12px 20px;border-radius:0 0 12px 12px}
+.rbar span{font-size:14px;color:var(--muted);min-width:0}
+.rbar span b{color:var(--ink)}
+.rbar button{font:inherit;font-weight:600;font-size:16px;flex:none;border:0;border-radius:8px;background:var(--ink);color:var(--surface);padding:10px 22px;min-height:46px;cursor:pointer}
+.rbar button:disabled{opacity:.4;cursor:not-allowed}
+.rc b{font-size:16px}
+.rc span{font-size:13.5px;color:var(--muted);line-height:1.5}
+.rc i{font-style:normal;font-family:var(--body);font-size:12.5px;color:var(--water);font-weight:600}
+.seg button{border-radius:8px}
+h2{font-family:var(--display);font-weight:700;font-size:21px;margin:0 0 12px;text-wrap:balance;display:flex;align-items:baseline;gap:10px}
+h2 .step{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--accent);direction:ltr}
+h3{font-size:15px;font-weight:600;margin:0 0 6px}
+label,.lbl{font-size:13.5px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px}
+.field{margin-bottom:16px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:inherit;font-size:14.5px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:4px;padding:7px 12px;cursor:pointer;min-height:40px}
+.seg button:hover{border-color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+.amount{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.amount input[type=number]{font-family:var(--mono);font-size:24px;font-weight:500;width:128px;padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);direction:ltr;text-align:center}
+.amount .unit{color:var(--muted);font-size:14px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{font-family:var(--mono);font-size:13.5px;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:4px;padding:6px 10px;cursor:pointer;min-height:36px}
+.presets button:hover{color:var(--ink);border-color:var(--ink)}
+.ratio-head{display:flex;justify-content:space-between;align-items:baseline}
+.ratio-head .num{font-size:22px;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent);direction:ltr;margin:6px 0 2px}
+.ends{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);direction:ltr}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.tile{background:var(--surface);padding:10px 12px}
+.tile .lbl{margin:0 0 2px}
+.tile .v{font-size:19px;font-weight:600}
+.tile .v small{font-family:var(--body);font-weight:400;font-size:13px;color:var(--muted)}
+.tile.main .v{font-size:30px;color:var(--accent);line-height:1.2}
+.desc{color:var(--muted);font-size:14.5px;margin:12px 0 0;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;margin-top:10px}
+.meta span b{font-weight:600}
+.hint{margin-top:12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.link{font:inherit;font-size:14px;background:none;border:0;border-bottom:1px solid var(--accent);color:var(--accent);padding:0;cursor:pointer}
+.opts{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:grid;gap:12px}
+.opts[hidden],.ice[hidden],.hint:empty{display:none}
+.cup{margin-top:16px;padding-top:14px;border-top:1px solid var(--ink)}
+.meters{display:grid;gap:8px;margin:6px 0 10px}
+.meter{display:grid;grid-template-columns:64px 1fr 44px;gap:10px;align-items:center;font-size:14px}
+.meter .track{height:10px;background:var(--water-soft);border-radius:2px;overflow:hidden}
+.meter .track i{display:block;height:100%;background:var(--water);border-radius:2px}
+.meter.hi .track i{background:var(--accent)}
+.meter .num{font-size:13px;color:var(--muted);text-align:end}
+.cup p{margin:0;font-size:14.5px}
+.cup .est{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* brew station */
+.station{background:var(--station);color:var(--station-ink);border-radius:6px;padding:16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px 18px;align-items:center}
+.ring{position:relative;width:132px;height:132px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.ring circle{fill:none;stroke-width:8}
+.ring .bg{stroke:rgba(233,242,238,.14)}
+.ring .fg{stroke:#ff7a63;stroke-linecap:round}
+.ring .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 16px}
+.ring .n{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:40px;font-weight:500;line-height:1;direction:ltr}
+.ring .n.word{font-family:var(--display);font-size:24px;direction:rtl}
+.ring .c{font-size:11.5px;opacity:.72;line-height:1.3;margin-top:4px}
+.stats{display:grid;gap:10px;min-width:0}
+.cap{font-size:12.5px;opacity:.7}
+.big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:clamp(40px,10vw,60px);font-weight:500;line-height:1;direction:ltr;letter-spacing:-.03em;text-align:left}
+.big small{font-size:.32em;opacity:.65;letter-spacing:0;margin-inline-start:4px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pair .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:22px;direction:ltr;line-height:1.2;text-align:end;white-space:nowrap}
+.now{grid-column:1/-1;border-top:1px solid rgba(233,242,238,.18);padding-top:12px;min-height:8.4em;font-size:14.5px;display:grid;gap:6px;align-content:start}
+.now .do{font-size:16.5px;font-weight:600}
+.now .do b{color:#ff8b76;font-family:var(--mono);direction:ltr;unicode-bidi:isolate}
+.now .l{opacity:.88}
+.now .l span{display:inline-block;font-size:12px;border:1px solid rgba(233,242,238,.35);border-radius:3px;padding:0 6px;margin-inline-end:6px;line-height:1.6}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}
+.controls button{font:inherit;font-weight:600;border-radius:4px;padding:9px 18px;cursor:pointer;min-height:46px;border:1px solid var(--ink);background:transparent;color:var(--ink)}
+.controls .go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);flex:1 1 160px;font-size:17px}
+.controls button[aria-pressed="false"]{color:var(--muted);border-color:var(--line)}
+.ice{margin:0 0 12px;padding:10px 12px;border-inline-start:3px solid var(--water);background:var(--water-soft);font-size:14.5px;border-radius:0 4px 4px 0}
+
+/* pour timeline */
+.pourcard{border:1px solid var(--line);border-radius:6px;padding:14px;background:var(--surface)}
+.pc-top{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px;align-items:center}
+.pc-cup svg{width:100%;height:auto;display:block}
+.pc-cup .dr{fill:var(--water-soft);stroke:var(--muted);stroke-width:2;stroke-linejoin:round}
+.pc-cup .bed{fill:var(--coffee);opacity:.55}
+.pc-cup .glass{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.pc-cup .liq{fill:var(--coffee);transform-box:fill-box;transform-origin:50% 100%;transition:transform .7s ease,opacity .7s ease}
+.pc-cup .cube{fill:var(--water-soft);stroke:var(--water);stroke-width:1.5;opacity:.9}
+.pc-cup .stream{stroke:var(--water);stroke-width:3;stroke-linecap:round;opacity:0;transition:opacity .2s}
+.pc-cup.pouring .stream{opacity:1;stroke-dasharray:4 5}
+@media (prefers-reduced-motion:no-preference){.pc-cup.pouring .stream{animation:drip .5s linear infinite}@keyframes drip{to{stroke-dashoffset:-9}}}
+.pc-w{display:flex;align-items:baseline;gap:4px;direction:ltr;justify-content:flex-end}
+.pc-w .num{font-size:44px;font-weight:500;line-height:1}
+.pc-w small{font-family:var(--mono);color:var(--muted)}
+.pc-side .cap{font-size:12.5px;color:var(--muted);text-align:end}
+.pc-chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.pc-chips button{font:inherit;font-size:14px;min-width:44px;min-height:42px;padding:0 10px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:4px;cursor:pointer}
+.pc-chips button.done{border-color:var(--ink);color:var(--ink)}
+.pc-chips button.live{border-color:var(--accent);color:var(--accent);font-weight:600}
+.pc-chips button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pc-detail{padding-top:6px;min-height:15em}
+.pc-left{margin-top:8px;font-size:14px;color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0}
+.steps li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;padding:12px 10px;margin:0 -10px;border-top:1px solid var(--line);border-radius:4px}
+.steps li.act{background:var(--water-soft);border-top-color:transparent}
+.steps li.act + li{border-top-color:transparent}
+.cupmark svg{display:block;width:48px;height:48px}
+.cupline{fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.liq{fill:var(--line)}
+.badge{display:none}
+.badge circle{fill:var(--water)}
+.badge path{fill:none;stroke:var(--surface);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+li.done .liq{fill:var(--coffee)}
+li.done .cupline{stroke:var(--ink)}
+li.done .badge{display:block}
+li.act .liq{fill:var(--accent)}
+li.act .cupline{stroke:var(--ink)}
+.shead{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+.shead .t{font-size:15px;color:var(--muted)}
+.shead .name{font-weight:600}
+.shead .add{font-size:15px;font-weight:600;color:var(--accent)}
+.shead .cum{font-size:14px;color:var(--muted);margin-inline-start:auto}
+.shead .cum .num{font-size:15px;font-weight:600;color:var(--water)}
+.steps p{margin:4px 0 0;font-size:14px}
+.steps p.do{color:var(--muted)}
+.steps p b{font-weight:600;font-size:12.5px;border:1px solid var(--line);border-radius:3px;padding:0 6px;margin-inline-end:6px;white-space:nowrap}
+.steps p.fx b{border-color:var(--accent);color:var(--accent)}
+.steps p.ex b{border-color:var(--water);color:var(--water)}
+li.done .shead .add,li.done .shead .cum .num{color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){
+  li.act .cupmark{animation:nudge 1.4s ease-in-out infinite}
+  @keyframes nudge{50%{transform:translateY(-3px)}}
+}
+.prep{margin:14px 0 0;padding:14px 18px 0 0;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.prep li{margin-bottom:2px}
+.origin{margin-top:10px;border-inline-start:3px solid var(--coffee);padding:2px 12px 2px 0;font-size:14.5px}
+.origin p{margin:0 0 4px}
+.origin .applied{color:var(--muted);font-size:13.5px}
+.scan{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.scan[hidden],.bag[hidden],.scannote[hidden]{display:none}
+.scanbtn{font:inherit;font-weight:600;font-size:14.5px;border:1px solid var(--coffee);color:var(--coffee);background:transparent;border-radius:4px;padding:8px 14px;min-height:42px;cursor:pointer}
+.scanbtn:disabled{opacity:.6;cursor:progress}
+.scanstate{font-size:13.5px;color:var(--muted)}
+.scannote{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.bag{margin-top:12px;border:1px solid var(--line);border-radius:4px;padding:12px 14px;background:var(--paper)}
+.bag h3{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bag dl{margin:6px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:14.5px}
+.bag dt{color:var(--muted);font-size:13.5px}
+.bag dd{margin:0;font-weight:500}
+.bag p{margin:8px 0 0;font-size:14px;color:var(--muted)}
+.fix{margin-top:14px;border-inline-start:3px solid var(--accent);padding:4px 14px 4px 0}
+.fix p{margin:0 0 8px;font-size:14.5px;color:var(--muted)}
+.fix ol{margin:0;padding:0 18px 0 0;font-size:15px}
+.fix li{margin-bottom:4px}
+.rule{margin:14px 0 0;font-size:14px;color:var(--muted)}
+@media (max-width:420px){
+  .ring{width:112px;height:112px}
+  .ring .n{font-size:34px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><b>V60</b><h1>مختبر التحضير</h1></div>
+    <p id="hdrNote">قهوة مختصة بالـV60، من الوصفة لين الكوب.</p>
+    <button type="button" class="homebtn" id="btnHome" hidden>الرئيسية</button>
+  </header>
+  <nav class="pager" aria-label="الخطوات" hidden><ol id="pager"></ol></nav>
+  <p class="summary" id="summary" hidden></p>
+
+  <div class="bench">
+    <section id="home" class="homesec" aria-labelledby="h-home">
+      <h2 id="h-home">شنو تبي تسوي اليوم؟</h2>
+      <p class="desc" style="margin:0 0 16px">اختر طريقة البداية، وتقدر تعدّل على أي شي بعدين.</p>
+      <button type="button" class="hcard" id="goReady">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 13H33L30.3 37Q29.8 41 26 41H16Q12.2 41 11.7 37Z"/><path d="M32.4 18H36a5 5 0 0 1 0 10h-4.7"/><path d="M16 21h12M16 27h10"/></svg>
+        <span class="ht"><b>وصفات جاهزة</b><span>وصفة بداية حسب بلد البن أو طريقة التحضير. تختار وتشوف الخيارات والكوب المتوقع.</span></span>
+      </button>
+      <button type="button" class="hcard alt" id="goBuild">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 14h32M8 24h32M8 34h32"/><circle cx="18" cy="14" r="3.5"/><circle cx="31" cy="24" r="3.5"/><circle cx="22" cy="34" r="3.5"/></svg>
+        <span class="ht"><b>اصنع وصفتك</b><span>جاوب على أسئلة: الكمية، البن، التحميص، الطعم، عدد الصبّات والطريقة. وتطلع لك وصفة ونتيجة متوقعة.</span></span>
+      </button>
+    </section>
+
+    <section id="ready" aria-labelledby="h-ready" hidden>
+      <h2 id="h-ready">وصفات جاهزة</h2>
+      <p class="desc" style="margin:0 0 14px">هذي نقاط بداية من إعدادي، مو وصفات رسمية. اختر وحدة وتقدر تعدّل عليها.</p>
+      <h3>حسب البن</h3>
+      <div class="rgrid" id="readyOrigins"></div>
+      <h3 style="margin-top:18px">حسب الطريقة</h3>
+      <div class="rgrid" id="readyMethods"></div>
+      <div class="rbar"><span id="readySel" aria-live="polite"></span><button type="button" id="readyGo" disabled>أكمل</button></div>
+    </section>
+
+    <section id="build" aria-labelledby="h-build" hidden>
+      <div class="blive" id="bLive" aria-live="polite"></div>
+      <h2 id="h-build">اصنع وصفتك</h2>
+      <p class="desc" style="margin:0 0 14px">جاوب على الأسئلة، والنتيجة المتوقعة فوق تتغير مع كل جواب.</p>
+      <div class="field"><span class="lbl">1. أنا أعرف</span><div class="seg" id="bMode">
+        <button type="button" data-v="water">كمية الماء</button><button type="button" data-v="coffee">كمية القهوة</button></div>
+        <div class="amount" style="margin-top:10px"><input type="number" id="bAmt" inputmode="decimal" min="1" max="1500" step="1" value="250"><span class="unit">غرام</span><div class="presets" id="bAmount"></div></div></div>
+      <div class="field"><span class="lbl">2. نوع البن</span><div class="seg" id="bOrigin"></div></div>
+      <div class="field"><span class="lbl">3. درجة التحميص</span><div class="seg" id="bRoast">
+        <button type="button" data-v="light">فاتح</button><button type="button" data-v="medium">وسط</button><button type="button" data-v="dark">غامق</button></div></div>
+      <div class="field"><span class="lbl">4. شنو تبي بالكوب؟ (الموازنة بين الحموضة والحلاوة)</span><div class="seg" id="bTaste">
+        <button type="button" data-v="sweet">أحلى وأهدى</button><button type="button" data-v="balanced">متوازن</button><button type="button" data-v="bright">حموضة ونكهات أوضح</button></div></div>
+      <div class="field"><span class="lbl">5. عدد الصبّات (كل ما زادت صارت القهوة أقوى)</span><div class="seg" id="bPours">
+        <button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5 · قياسي</button><button type="button" data-v="6">6</button></div></div>
+      <div class="field">
+        <div class="ratio-head"><label for="bRatio">6. الريشيو</label><span class="num" id="bRatioOut">1:16</span></div>
+        <input type="range" id="bRatio" min="12" max="18" step="0.5" value="16">
+        <div class="ends"><span>1:12 أثقل</span><span>أخف 1:18</span></div>
+        <div class="hint"><span id="bRatioNote"></span><button type="button" class="link" id="bRatioAuto">استخدم المقترح</button></div>
+      </div>
+      <div class="field"><span class="lbl">7. ساخنة أو مثلّجة</span><div class="seg" id="bIce">
+        <button type="button" data-v="0">ساخنة</button><button type="button" data-v="1">مثلّجة</button></div></div>
+      <details class="bsug"><summary>اقتراحات: أساليب المحترفين (اختياري)</summary>
+        <p class="desc" style="margin:8px 0 10px">اتركها على "اقترح لي" وأنا أختار الأسلوب الأنسب. أو جرّب أسلوب معين، لكن عدد الصبّات يثبت حسب الأسلوب.</p>
+        <div class="seg" id="bMethod"></div></details>
+      <div class="cup" id="bResult"></div>
+      <p style="margin:12px 0 0"><button type="button" class="link" id="bBack">رجوع للحسبة العادية</button></p>
+    </section>
+
+    <section id="calc" aria-labelledby="h-calc">
+      <h2 id="h-calc"><span class="step">01</span>الحسبة</h2>
+      <button type="button" class="scanbtn" id="openBuild" style="margin-bottom:14px">ابنِ لي وصفة · اختبار سريع</button>
+      <div class="field">
+        <span class="lbl">البن من وين؟ اختر الدولة أو صوّر الكيس، ويضبط لك وصفة تناسبه</span>
+        <div class="seg" id="originChips"></div>
+        <div class="scan" id="scanBox" hidden>
+          <input type="file" id="bagFile" accept="image/*" hidden>
+          <button type="button" class="scanbtn" id="btnScan">صوّر كيس البن أو ارفع صورته</button>
+          <span class="scanstate" id="scanState" aria-live="polite"></span>
+        </div>
+        <p class="scannote" id="scanNote" hidden>قراءة كيس البن من الصورة تشتغل لما تفتح الصفحة وأنت مسجل دخول في Claude.</p>
+        <div class="bag" id="bagCard" hidden></div>
+        <div class="origin" id="originNote" hidden></div>
+      </div>
+      <div class="field">
+        <span class="lbl">أنا أعرف</span>
+        <div class="seg" id="modeSeg">
+          <button type="button" data-mode="water">كمية الماء</button>
+          <button type="button" data-mode="coffee">كمية القهوة</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="amount" id="amountLbl">الماء</label>
+        <div class="amount">
+          <input type="number" id="amount" inputmode="decimal" min="1" max="1500" step="1" value="250">
+          <span class="unit">غرام</span>
+          <div class="presets" id="presets"></div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="ratio-head"><label for="ratio">الريشيو</label><span class="num" id="ratioOut">1:16</span></div>
+        <input type="range" id="ratio" min="12" max="18" step="0.5" value="16">
+        <div class="ends"><span>1:12 أثقل</span><span>أخف 1:18</span></div>
+      </div>
+      <div class="field">
+        <span class="lbl">درجة التحميص</span>
+        <div class="seg" id="roastSeg">
+          <button type="button" data-roast="light">فاتح</button>
+          <button type="button" data-roast="medium">وسط</button>
+          <button type="button" data-roast="dark">غامق</button>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile main"><span class="lbl">القهوة</span><div class="v num" id="tDose">15.6 <small>غ</small></div></div>
+        <div class="tile main"><span class="lbl">الماء</span><div class="v num" id="tWater">250 <small>غ</small></div></div>
+        <div class="tile"><span class="lbl">حرارة الماء</span><div class="v num" id="tTemp">93–96°</div></div>
+        <div class="tile"><span class="lbl">الطحن</span><div class="v" id="tGrind" style="font-size:16px">وسط</div></div>
+      </div>
+    </section>
+
+    <section id="method" aria-labelledby="h-method">
+      <h2 id="h-method"><span class="step">02</span>الطريقة</h2>
+      <div class="field">
+        <span class="lbl">النوع</span>
+        <div class="seg" id="iceSeg">
+          <button type="button" data-ice="0">ساخنة</button>
+          <button type="button" data-ice="1">مثلّجة</button>
+        </div>
+      </div>
+      <div class="field" id="iceShare" hidden>
+        <span class="lbl">نسبة الثلج من الماء الكلي</span>
+        <div class="seg" id="icePctSeg">
+          <button type="button" data-p="30">30% أقوى</button>
+          <button type="button" data-p="40">40% قياسي</button>
+          <button type="button" data-p="50">50% أخف</button>
+        </div>
+      </div>
+      <div class="seg" id="methodChips"></div>
+      <p class="desc" id="mDesc"></p>
+      <div class="meta" id="mMeta"></div>
+      <div class="hint" id="mHint"></div>
+      <div class="opts" id="opts46" hidden>
+        <div>
+          <span class="lbl">أول صبّتين (40% من الماء) تحدد الطعم</span>
+          <div class="seg" id="tasteSeg">
+            <button type="button" data-taste="sweet">أحلى وأهدى</button>
+            <button type="button" data-taste="balanced">متوازن</button>
+            <button type="button" data-taste="bright">حموضة ونكهات أوضح</button>
+          </div>
+        </div>
+        <div>
+          <span class="lbl">باقي الماء (60%) يحدد القوة. العدد هنا هو مجموع الصبّات كلها</span>
+          <div class="seg" id="strengthSeg">
+            <button type="button" data-n="0">2 صبّات</button>
+            <button type="button" data-n="1">3 صبّات</button>
+            <button type="button" data-n="2">4 صبّات · أخف</button>
+            <button type="button" data-n="3">5 صبّات · قياسي</button>
+            <button type="button" data-n="4">6 صبّات · أقوى</button>
+          </div>
+        </div>
+      </div>
+      <div class="cup">
+        <h3>الكوب المتوقع</h3>
+        <div class="meters" id="meters"></div>
+        <p id="cupText"></p>
+        <p class="est" id="cupEst"></p>
+      </div>
+    </section>
+
+    <section id="brew" aria-labelledby="h-brew">
+      <h2 id="h-brew"><span class="step">03</span>التحضير</h2>
+      <div class="station">
+        <div class="ring" role="timer" aria-label="العدّاد للصبّة الجاية">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="bg" cx="60" cy="60" r="52"></circle>
+            <circle class="fg" id="ringFg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="mid"><div class="n word" id="rCount">جاهز</div><div class="c" id="rCountCap">اضغط ابدأ</div></div>
+        </div>
+        <div class="stats">
+          <div>
+            <div class="cap" style="text-align:end">الميزان لازم يوصل</div>
+            <div class="big"><span id="rTarget">50</span><small>g</small></div>
+          </div>
+          <div class="pair" style="justify-content:flex-end">
+            <div><div class="cap" style="text-align:end">الصبّة</div><div class="v" id="rStep">0/5</div></div>
+            <div><div class="cap" style="text-align:end">الوقت</div><div class="v" id="rClock">0:00</div></div>
+          </div>
+        </div>
+        <div class="now" id="rNow" aria-live="polite"></div>
+      </div>
+      <div class="controls">
+        <button type="button" class="go" id="btnGo">ابدأ التحضير</button>
+        <button type="button" id="btnReset">تصفير</button>
+        <button type="button" id="btnSound" aria-pressed="true">الصوت شغّال</button>
+      </div>
+      <div class="ice" id="iceNote" hidden></div>
+      <div class="pourcard" id="pourCard"></div>
+      <ul class="prep">
+        <li>بلّل الفلتر بماء حار وفضّي السيرفر قبل لا تحط القهوة.</li>
+        <li>سوِّ سطح القهوة وصفّر الميزان.</li>
+        <li>صب بدوائر هادية من الوسط للأطراف، ولا تصب على الفلتر مباشرة.</li>
+      </ul>
+    </section>
+
+    <section id="dial" aria-labelledby="h-dial">
+      <h2 id="h-dial"><span class="step">04</span>ضبط الطعم</h2>
+      <span class="lbl">شلون طلع الكوب؟</span>
+      <div class="seg" id="dialChips"></div>
+      <div class="fix" id="fix"></div>
+      <p class="rule">غيّر شي واحد بس في كل مرة، عشان تعرف شنو اللي أثّر.</p>
+    </section>
+  </div>
+  <p class="credit">من إعداد <b>خالد</b> · <a href="https://snapchat.com/t/Lfhz83Mt" target="_blank" rel="noopener">سناب صاحب الفكرة</a></p>
+  <div class="navbar">
+    <button type="button" id="btnPrev">السابق</button>
+    <button type="button" class="next" id="btnNext">التالي</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var fmt=function(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+var r1=function(n){return Math.round(n*10)/10};
+var LEAD=3, RING=326.73;
+
+var ROAST={light:{temp:"93–96°"},medium:{temp:"90–93°"},dark:{temp:"84–88°"}};
+var BLOOM_FX="تطلّع الغازات وتبلل كل القهوة، عشان الماء بعدها يستخلص بالتساوي.";
+
+/* Each step: t (seconds), cum (target on the scale), note (what to do), fx (what this pour does to the cup). */
+var METHODS=[
+ {id:"sci",name:"الوصفة المخصصة",ratio:16,grind:"وسط",
+  desc:"وصفة تنبني على إعداداتك مباشرة: التحميص يحدد التبليل والحرارة والطحن والتوقيت، وحموضة البن تعدّل أول الصبّات، وعدد الصبّات والطعم يحددون توزيع الماء. مبنية على أسس الاستخلاص: الحموضة تطلع أول، ثم الحلاوة، ثم القوام.",
+  plan:function(D,W,o){return sciPlan(D,W,o)}},
+ {id:"f46",name:"4:6 كاسويا",ratio:15,grind:"وسط مايل للخشن",
+  desc:"طريقة تيتسو كاسويا، بطل العالم 2016. أول 40% من الماء تتحكم بالحلاوة والحموضة، وآخر 60% تتحكم بالقوة. أفضل طريقة إذا تبي تتحكم بالطعم بدون ما تغيّر الطحنة.",
+  plan:function(D,W,o){
+    var a=W*0.4,share={sweet:0.4,balanced:0.5,bright:0.6}[o.taste],n=o.n,out=[],i;
+    var first={sweet:"تفتح القهوة وتطلّع الغازات. ولأنها أصغر من الثانية، الكوب يميل للحلاوة.",
+               balanced:"تفتح القهوة وتطلّع الغازات. ولأنها تساوي الثانية، الحموضة والحلاوة متوازنة.",
+               bright:"تفتح القهوة وتطلّع الغازات. ولأنها أكبر من الثانية، الحموضة والنكهات الفاكهية تبرز."}[o.taste];
+    var tail={1:" صبّة وحدة للباقي تعطي كوب أخف وأسرع.",2:" صبّتين للباقي تعطي كوب أخف.",3:"",4:" أربع صبّات للباقي تعطي كوب أقوى وأثقل."}[n];
+    if(n===0){
+      /* two pours only: a first pour that sets the taste, then everything else in one go */
+      var f1={sweet:0.25,balanced:0.3,bright:0.4}[o.taste];
+      out.push({t:0,cum:W*f1,note:"بلّل كل القهوة وصب أول صبّة",fx:{sweet:"صبّة أولى أصغر، فيميل الكوب للحلاوة.",balanced:"صبّة أولى متوسطة، فالحموضة والحلاوة متوازنة.",bright:"صبّة أولى أكبر، فتبرز الحموضة والنكهات الفاكهية."}[o.taste]+" تطلّع الغازات وتبدأ الاستخلاص."});
+      out.push({t:45,cum:W,note:"صبّة وحدة للباقي، خله ينزل كامل",fx:"تكمل القوة والقوام في صبّة وحدة. كوب أخف وأبسط من 4:6 الكاملة."});
+      return {steps:out,end:130};
+    }
+    out.push({t:0,cum:a*share,note:"بلّل كل القهوة",fx:first});
+    out.push({t:45,cum:a,note:"تكمل الـ40% الأولى",fx:"تسحب الأحماض والسكريات، وهي أول شي يذوب من القهوة. مع الأولى تحدد طعم الكوب."});
+    for(i=1;i<=n;i++)out.push({t:45+45*i,cum:a+(W-a)*i/n,
+      note:i===n?"آخر صبّة، خله ينزل كامل":"انتظر لين ينزل الماء قبل الصبّة الجاية",
+      fx:i===n?"تكمل القوة وتعطي الكوب ثقله."+tail:(i===1?"من هنا تبدأ القوة. ":"")+"كل صبّة تحرّك القهوة وتزيد الاستخلاص والقوام."});
+    return {steps:out,end:out[out.length-1].t+40};
+  }},
+ {id:"hoff",name:"هوفمان",ratio:16.5,grind:"وسط مايل للناعم",
+  desc:"طريقة جيمس هوفمان للكوب الواحد: خمس صبّات متساوية وسريعة. تطلع كوب نظيف ومتوازن، وتناسب التحميص الفاتح مع ماء حار جداً.",
+  plan:function(D,W){
+    return {end:180,steps:[
+     {t:0,cum:W*0.2,note:"تبليل. حرّك الدريبر حركة دائرية خفيفة",fx:BLOOM_FX},
+     {t:45,cum:W*0.4,note:"صب بهدوء",fx:"تسحب الحموضة والنكهات الفاكهية، وهي أسرع شي يذوب."},
+     {t:70,cum:W*0.6,note:"نفس الهدوء",fx:"تسحب الحلاوة والسكريات."},
+     {t:90,cum:W*0.8,note:"حافظ على مستوى الماء عالي",fx:"تبني القوام وتحافظ على حرارة القهوة."},
+     {t:110,cum:W,note:"بعدها لفّة خفيفة للدريبر",fx:"تكمل الاستخلاص وتعطي العمق. اللفّة تسوّي السطح فينزل الماء بالتساوي."}]};
+  }},
+ {id:"rao",name:"سكوت راو",ratio:16.5,grind:"وسط مايل للناعم",
+  desc:"تبليل ثم صبّة وحدة مستمرة. أبسط طريقة وأسهلها تكراراً، وتعطي استخلاص عالي وكوب حلو.",
+  plan:function(D,W){
+    var b=Math.min(D*3,W*0.3);
+    return {end:165,steps:[
+     {t:0,cum:b,note:"تبليل بثلاث أضعاف وزن القهوة، ثم لفّ الدريبر",fx:BLOOM_FX},
+     {t:45,cum:W,note:"صبّة وحدة مستمرة وهادية، تخلصها تقريباً عند 1:45. بعدها لفّة خفيفة",fx:"صبّة وحدة تستخلص كل شي بالترتيب: الحموضة، ثم الحلاوة، ثم القوام. الصب المستمر يحفظ الحرارة ويرفع الاستخلاص."}]};
+  }},
+ {id:"hed",name:"لانس هيدريك",ratio:17,grind:"وسط مايل للناعم",
+  desc:"تبليل طويل ثم صبّة وحدة. التبليل الطويل يطلع الغازات كلها ويخلي النكهات أوضح، خصوصاً مع البن الطازج والتحميص الفاتح.",
+  plan:function(D,W){
+    var b=Math.min(D*3,W*0.3);
+    return {end:195,steps:[
+     {t:0,cum:b,note:"تبليل بثلاث أضعاف وزن القهوة. حرّك القهوة بملعقة أو لفّ الدريبر وخله دقيقة كاملة",fx:"التبليل الطويل يطلّع الغازات كلها، فتطلع النكهات أنظف وأوضح."},
+     {t:60,cum:W,note:"صبّة وحدة هادية ومستمرة، تخلصها تقريباً عند 2:00",fx:"تستخلص بالتساوي بدون تحريك زايد، فتطلع الحموضة نظيفة والحلاوة واضحة."}]};
+  }},
+ {id:"classic",name:"الكلاسيكية",ratio:16,grind:"وسط",
+  desc:"ثلاث صبّات: تبليل وصبّتين. بداية ممتازة لأي بن جديد قبل لا تجرب الطرق الثانية.",
+  plan:function(D,W){
+    var b=Math.min(D*2,W*0.25);
+    return {end:165,steps:[
+     {t:0,cum:b,note:"تبليل بضعف وزن القهوة",fx:BLOOM_FX},
+     {t:40,cum:W*0.6,note:"صب بدوائر من الوسط للأطراف",fx:"تسحب الحموضة والحلاوة، وأغلب نكهة الكوب تطلع منها."},
+     {t:80,cum:W,note:"آخر صبّة، خله ينزل كامل",fx:"تكمل القوام والقوة وتوازن الحموضة."}]};
+  }},
+ {id:"osmo",name:"الأسموزي",ratio:13,grind:"خشن",temp:"83–86°",
+  desc:"الطريقة اليابانية للتحميص الغامق: ماء أبرد، طحنة خشنة، وصب رفيع وبطيء في الوسط بدون ما تحرّك القهوة. تطلع كوب ثقيل وحلو بدون مرارة.",
+  plan:function(D,W){
+    var b=Math.min(D*2,W*0.25);
+    return {end:180,steps:[
+     {t:0,cum:b,note:"نقّط الماء في الوسط لين تتبلل القهوة",fx:"تبلل القهوة بهدوء وتطلّع الغازات بدون ما تحرّكها."},
+     {t:40,cum:W*0.5,note:"خيط ماء رفيع في الوسط بدوائر صغيرة بحجم العملة",fx:"الصب الرفيع في الوسط يستخلص ببطء، فيسحب الحلاوة ويترك المرارة."},
+     {t:90,cum:W*0.8,note:"نفس الصب، لا توصل للأطراف",fx:"تزيد الكمية والقوام، والأطراف الجافة تحجز المرارة."},
+     {t:130,cum:W,note:"شيل الدريبر أول ما يوصل الوزن",fx:"تكمل الكوب. شيل الدريبر بدري يمنع آخر القطرات المرّة."}]};
+  }}
+];
+
+var DIAL=[
+ {id:"sour",name:"حامضة حادّة",why:"الاستخلاص ناقص، الماء ما أخذ كفايته من القهوة.",
+  fix:["اطحن أنعم بدرجة وحدة.","ارفع حرارة الماء درجتين.","إذا ما تغيّر شي، زد التحريك أو قسّم الماء على صبّات أكثر."]},
+ {id:"bitter",name:"مرّة",why:"الاستخلاص زايد، الماء أخذ أكثر من اللازم.",
+  fix:["اطحن أخشن بدرجة وحدة.","نزّل حرارة الماء درجتين إلى ثلاث.","قلل التحريك وعدد الصبّات."]},
+ {id:"thin",name:"خفيفة ومائية",why:"القهوة قليلة على كمية الماء.",
+  fix:["نزّل الريشيو إلى 1:15 أو 1:14.","أو اطحن أنعم شوي.","في طريقة 4:6 اختر أقوى (6 صبّات)."]},
+ {id:"heavy",name:"ثقيلة وقوية",why:"القهوة كثيرة على كمية الماء.",
+  fix:["ارفع الريشيو إلى 1:16 أو 1:17.","في طريقة 4:6 اختر أخف (4 صبّات).","أو اطحن أخشن شوي."]},
+ {id:"dry",name:"قابضة وتنشّف اللسان",why:"الماء لقى مسارات سريعة داخل القهوة، أو في ناعم كثير بالطحنة.",
+  fix:["اطحن أخشن شوي.","صب أهدى وأقرب من القهوة، ولا تصب على الفلتر.","سوِّ سطح القهوة قبل الصب ولا تكثر التحريك."]},
+ {id:"flat",name:"بدون نكهة",why:"المشكلة غالباً من البن أو الماء، مو من الصب.",
+  fix:["استخدم بن عمره من أسبوع إلى شهر من تاريخ التحميص.","اطحن وقت التحضير، مو قبله.","استخدم ماء قليل الأملاح (TDS بين 70 و150).","جرب صبّة أولى أكبر في طريقة 4:6 عشان تبرز الحموضة."]},
+ {id:"fast",name:"نزل بسرعة",why:"إذا خلص النزول قبل الوقت المتوقع بأكثر من 30 ثانية، الطحنة خشنة.",
+  fix:["اطحن أنعم بدرجة وحدة.","تأكد إن الفلتر لاصق على الدريبر بدون فراغات."]},
+ {id:"icedfade",name:"المثلّجة طالعة باهتة",why:"الثلج خفّف الكوب أكثر من اللازم، أو الاستخلاص كان ناقص.",
+  fix:["قلل نسبة الثلج إلى 30%.","اطحن أنعم بدرجة وحدة.","ارفع حرارة الماء إلى 96° مع التحميص الفاتح."]},
+ {id:"slow",name:"تأخر النزول",why:"إذا تأخر النزول أكثر من 45 ثانية عن الوقت المتوقع، الطحنة ناعمة أو الفلتر انسدّ.",
+  fix:["اطحن أخشن بدرجة وحدة.","قلل التحريك، لأنه ينزّل الناعم لقاع الفلتر.","صب من ارتفاع أقل."]}
+];
+
+/* Starting recipes by origin. p = shift to the expected cup: [acidity, sweetness, body]. */
+var ORIGINS=[
+ {id:"eth_w",name:"إثيوبيا مغسولة",notes:"ياسمين، ليمون، خوخ، قوام مثل الشاي",ratio:16.5,roast:"light",temp:"94–96°",method:"hoff",p:[1,0,-1],
+  tip:"حبوبه صغيرة وكثيفة وتطلّع ناعم كثير. إذا تأخر النزول اطحن أخشن بدرجة."},
+ {id:"eth_n",name:"إثيوبيا مجففة",notes:"توت أزرق، فراولة، فواكه ناضجة",ratio:16,roast:"light",temp:"92–94°",method:"f46",taste:"bright",n:3,p:[0,1,0],
+  tip:"حلاوته عالية من التجفيف. لا ترفع الحرارة كثير عشان ما يطلع طعم مخمّر."},
+ {id:"kenya",name:"كينيا",notes:"توت أسود، جريب فروت، حموضة عالية ولامعة",ratio:16,roast:"light",temp:"93–95°",method:"f46",taste:"sweet",n:3,p:[2,0,0],
+  tip:"حموضته قوية. الصبّة الأولى الأصغر تهدّيها وتبرز الحلاوة."},
+ {id:"rwanda",name:"رواندا",notes:"شاي أحمر، برتقال، توت أحمر",ratio:16.5,roast:"light",temp:"93–95°",method:"hoff",p:[1,0,-1],
+  tip:"قريب من الكيني بس أهدى. الماء الحار يطلّع نكهات الشاي والحمضيات."},
+ {id:"yemen",name:"اليمن",notes:"فواكه مجففة، زبيب، توابل، طابع نبيذي",ratio:15.5,roast:"medium",temp:"91–93°",method:"f46",taste:"balanced",n:3,p:[0,1,1],
+  tip:"بن مجفف ونكهاته مركّزة. ريشيو أقل شوي يبرز الفواكه المجففة والتوابل."},
+ {id:"colombia",name:"كولومبيا",notes:"كراميل، تفاح أحمر، فواكه حمراء، متوازن",ratio:16,roast:"medium",temp:"92–94°",method:"f46",taste:"balanced",n:3,p:[0,1,0],
+  tip:"بن متوازن ويتحمّل الأخطاء. أفضل بن تتعلم عليه الضبط."},
+ {id:"brazil",name:"البرازيل",notes:"مكسرات، شوكولاتة، كراميل، حموضة قليلة",ratio:15,roast:"medium",temp:"88–91°",method:"f46",taste:"sweet",n:3,p:[-2,1,2],
+  tip:"طبيعته شوكولاتة ومكسرات. ماء أبرد وريشيو أقل يعطيك حلاوة بدون مرارة."},
+ {id:"guatemala",name:"غواتيمالا",notes:"شوكولاتة، تفاح أخضر، برتقال",ratio:16,roast:"medium",temp:"92–94°",method:"classic",p:[0,0,1],
+  tip:"إذا طلع جاف في آخر الكوب، نزّل الحرارة درجتين."},
+ {id:"costa",name:"كوستاريكا",notes:"عسل، حمضيات، كوب نظيف وحلو",ratio:16.5,roast:"light",temp:"92–94°",method:"rao",p:[0,1,-1],
+  tip:"نظيف وحلو، خصوصاً المعالجة العسلية. الصبّة الوحدة تحافظ على نظافته."},
+ {id:"honduras",name:"هندوراس",notes:"كراميل، شوكولاتة بالحليب، فواكه استوائية خفيفة",ratio:16,roast:"medium",temp:"91–93°",method:"classic",p:[-1,1,0],
+  tip:"حلو وهادي. يتحمل طحنة أنعم شوي لو تبي قوام أكثر."},
+ {id:"panama",name:"بنما جيشا",notes:"ياسمين، برغموت، خوخ، نكهات زهرية ناعمة",ratio:17,roast:"light",temp:"91–93°",method:"hed",p:[1,1,-2],
+  tip:"نكهاته زهرية وخفيفة. ريشيو عالي وتحريك قليل عشان ما تغطي عليها."},
+ {id:"indo",name:"إندونيسيا",notes:"أعشاب، خشب الأرز، شوكولاتة داكنة، قوام ثقيل",ratio:15,roast:"dark",temp:"86–89°",method:"f46",taste:"sweet",n:3,p:[-2,0,2],
+  tip:"قوامه ثقيل وحموضته قليلة وغالباً تحميصه أغمق. الماء الأبرد يمنع المرارة."}
+];
+var PROCESS={
+  washed:{name:"مغسولة",tip:"المغسولة تعطي كوب أنظف وحموضة أوضح."},
+  natural:{name:"مجففة",tip:"المجففة حلاوتها أعلى ونكهاتها فاكهية. نزّل الحرارة درجة أو درجتين لو طلع طعم مخمّر."},
+  honey:{name:"عسلية",tip:"العسلية بين المغسولة والمجففة: حلاوة واضحة وقوام أكثر."},
+  anaerobic:{name:"لاهوائية",tip:"اللاهوائية نكهاتها قوية ومخمّرة. نزّل الحرارة درجتين إلى ثلاث وخفف التحريك."},
+  other:{name:"معالجة خاصة",tip:""}
+};
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function applyOrigin(o){
+  if(!o)return;
+  S.ratio=o.ratio;S.roast=o.roast;S.method=o.method;if(o.taste)S.taste=o.taste;if(o.n)S.n=o.n;
+}
+function bagOriginId(b){
+  var c=b.country_id;
+  if(c==="eth")return (b.process==="natural"||b.process==="anaerobic")?"eth_n":"eth_w";
+  return ORIGINS.some(function(o){return o.id===c})?c:"";
+}
+var ROAST_NAME={light:"فاتح",medium:"وسط",dark:"غامق"};
+function origin(){return ORIGINS.filter(function(o){return o.id===S.origin})[0]||null}
+/* Custom recipe engine. Extraction order: acids first, sugars next, bitterness and body last.
+   Roast sets the bloom, timing and agitation; bean acidity shifts the first pours; pours/taste shape the water split. */
+function sciPlan(D,W,o){
+  var N=Math.max(2,Math.min(6,(o.n||0)+2)),roast=o.roast||"light",out=[],i;
+  var bt={light:45,medium:40,dark:30}[roast],iv=({light:40,medium:40,dark:35}[roast])-(N>=5?5:0),drain={light:55,medium:50,dark:40}[roast];
+  var score={sweet:-1,balanced:0,bright:1}[o.taste]+(roast==="light"?-0.3:(roast==="dark"?0.3:0))+((o.acid||0)>=2?-0.5:((o.acid||0)<=-2?0.5:0));
+  var share=Math.max(0.35,Math.min(0.65,0.5+0.1*score)),A=W*0.4;
+  var agit={light:"صب بدوائر أوسع وأقوى شوي، التحميص الفاتح يحتاج استخلاص أكثر.",medium:"صب بدوائر هادية من الوسط للأطراف.",dark:"صب هادي من الوسط وقلل التحريك، الغامق يستخلص بسرعة والمرارة تطلع بسهولة."}[roast];
+  var firstFx=score<-0.2?"تفتح القهوة وتطلّع الغازات. ولأنها أصغر من الثانية، الكوب يميل للحلاوة.":(score>0.2?"تفتح القهوة وتطلّع الغازات. ولأنها أكبر من الثانية، الحموضة والنكهات الفاكهية تبرز.":"تفتح القهوة وتطلّع الغازات. ولأنها قريبة من الثانية، الحموضة والحلاوة متوازنة.");
+  if(N===2){
+    var f1=Math.max(0.22,Math.min(0.45,0.3+0.08*score));
+    out.push({t:0,cum:Math.max(D*2,W*f1),note:"بلّل كل القهوة وصب أول صبّة",fx:firstFx+" تبدأ الاستخلاص بالحموضة ثم الحلاوة."});
+    out.push({t:bt,cum:W,note:"صبّة وحدة للباقي، خله ينزل كامل. "+agit,fx:"تكمل الحلاوة والقوام والقوة في صبّة وحدة. كوب أخف وأبسط."});
+    return {steps:out,end:bt+drain};
+  }
+  var first=Math.max(D*2,Math.min(A*share,A-D)),rest=N-2;
+  out.push({t:0,cum:first,note:"بلّل كل القهوة",fx:firstFx});
+  out.push({t:bt,cum:A,note:"تكمل الـ40% الأولى. "+agit,fx:"تسحب الأحماض والسكريات، وهي أول شي يذوب من القهوة. مع الأولى تحدد طعم الكوب."});
+  for(i=1;i<=rest;i++)out.push({t:bt+iv*i,cum:A+(W-A)*i/rest,
+    note:i===rest?"آخر صبّة، خله ينزل كامل":"انتظر لين ينزل الماء قبل الصبّة الجاية. "+agit,
+    fx:i===rest?"تكمل القوة وتعطي الكوب ثقله. "+(rest===1?"صبّة وحدة للباقي تعطي كوب أخف.":(rest>=4?"كثرة الصبّات تزيد القوة والقوام.":"")):(i===1?"من هنا تبدأ القوة. ":"")+"كل صبّة تحرّك القهوة وتزيد الاستخلاص والقوام."});
+  return {steps:out,end:out[out.length-1].t+drain};
+}
+function grindNow(m){
+  var g=m.grind;
+  if(m.id==="sci"){
+    g={light:"وسط مايل للناعم",medium:"وسط",dark:"وسط مايل للخشن"}[S.roast];
+    if(S.n>=3)g+=" · أخشن شوي مع كثرة الصبّات";
+  }
+  return S.iced?g+" · أنعم بدرجتين":g;
+}
+function tempNow(m){var o=origin();if(S.iced&&!m.temp)return S.roast==="dark"?"88–91°":"94–96°";return m.temp||(o&&S.roast===o.roast?o.temp:ROAST[S.roast].temp)}
+var BASE={sci:[5,6,5],f46:[5,6,5],hoff:[6,6,4],rao:[5,7,5],hed:[7,6,4],classic:[5,5,5],osmo:[2,7,8],iced:[7,5,3]};
+function clamp(n){return Math.max(1,Math.min(10,Math.round(n)))}
+function profile(){
+  var b=BASE[S.method]||[5,5,5],acid=b[0],sweet=b[1],body=b[2],strength=5+(16-S.ratio)*1.3;
+  if(S.roast==="light"){acid+=2;body-=1}
+  if(S.roast==="dark"){acid-=2;body+=2;sweet-=1}
+  body+=(16-S.ratio)*0.6;
+  if(S.iced){acid+=1;sweet-=1;body-=1}
+  var og=origin();if(og){acid+=og.p[0];sweet+=og.p[1];body+=og.p[2]}
+  if(S.method==="f46"||S.method==="sci"){
+    if(S.taste==="sweet"){sweet+=1.5;acid-=1.5}
+    if(S.taste==="bright"){acid+=1.5;sweet-=1}
+    strength+=(S.n-3)*1.2;body+=(S.n-3)*0.6;
+  }
+  return {acid:clamp(acid),sweet:clamp(sweet),body:clamp(body),strength:clamp(strength)};
+}
+function cupSentence(p){
+  var a=p.acid>=7?"حموضة واضحة ونكهات فاكهية بارزة":(p.acid<=3?"حموضة هادية جداً":"حموضة معتدلة");
+  var w=p.sweet>=7?"حلاوة عالية":(p.sweet<=4?"حلاوة خفيفة":"حلاوة متوسطة");
+  var b=p.body>=7?"قوام ثقيل":(p.body<=3?"قوام خفيف مثل الشاي":"قوام متوسط");
+  var s=p.strength>=7?"والكوب قوي ومركّز":(p.strength<=3?"والكوب خفيف":"والقوة متوازنة");
+  return a+"، "+w+"، "+b+"، "+s+".";
+}
+function expectStep(i,n,m){
+  if(i===0)return "القهوة تنتفخ وتطلع فقاعات. إذا ما انتفخت فالبن قديم أو الماء بارد.";
+  if(m.id==="osmo")return i===n-1?"رغوة فاتحة في الوسط والأطراف جافة تقريباً.":"قبّة رغوة ترتفع في الوسط واللون يفتح شوي شوي.";
+  if(i===n-1)return n===2?"مستوى الماء يرتفع بثبات، وبعد النزول يطلع السطح مستوي.":"النزول يبطّأ شوي، ويخلص والسطح مستوي بدون حفر.";
+  if(m.id==="f46"&&i===1)return "الماء ينزل أسرع من أول صبّة، واللون بني غامق.";
+  return "الماء ينزل بثبات، ولون الرغوة يفتح مع كل صبّة.";
+}
+var CUP_PATH="M9 13H33L30.3 37Q29.8 41 26 41H16Q12.2 41 11.7 37Z";
+function cupSvg(level,id){
+  var h=Math.max(3,Math.round(28*level));
+  return '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><clipPath id="cp'+id+'"><path d="'+CUP_PATH+'"/></clipPath></defs>'+
+    '<rect class="liq" x="7" y="'+(41-h)+'" width="28" height="'+h+'" clip-path="url(#cp'+id+')"/>'+
+    '<path class="cupline" d="'+CUP_PATH+'"/><path class="cupline" d="M32.4 18H36a5 5 0 0 1 0 10h-4.7"/>'+
+    '<g class="badge"><circle cx="38" cy="9" r="7.5"/><path d="M34.4 9.2l2.5 2.5 4.6-5"/></g></svg>';
+}
+
+var S={q:{amount:250,mode:"water",origin:"",roast:"light",taste:"balanced",pours:5,ratio:null,method:"auto",iced:false},origin:"",bag:null,iced:false,icePct:40,mode:"water",amount:250,ratio:16,roast:"light",method:"f46",taste:"bright",n:3,dial:"sour",sound:true};
+try{var saved=JSON.parse(localStorage.getItem("v60lab")||"null");if(saved)for(var k in S)if(k in saved)S[k]=saved[k];}catch(e){}
+if(S.method==="iced"){S.method="f46";S.iced=true}
+var hot=window.claude&&window.claude.hot;
+if(hot&&hot.data&&hot.data.S)for(var k2 in S)if(k2 in hot.data.S)S[k2]=hot.data.S[k2];
+if(hot&&hot.snapshot)hot.snapshot(function(){return {S:S,page:page}});
+function save(){try{localStorage.setItem("v60lab",JSON.stringify(S))}catch(e){}}
+
+var PAGES=[{id:"calc",name:"الحسبة"},{id:"method",name:"الطريقة"},{id:"brew",name:"التحضير"},{id:"dial",name:"ضبط الطعم"}];
+/* view: "home" (two choices), "ready" (ready recipes), "build" (recipe builder), "pages" (the 4 steps) */
+var page=0,wiz=false,view="home";
+function showPage(){
+  var inPages=view==="pages";
+  wiz=view==="build";
+  PAGES.forEach(function(p,i){$(p.id).hidden=!inPages||i!==page});
+  $("home").hidden=view!=="home";$("ready").hidden=view!=="ready";$("build").hidden=!wiz;
+  document.querySelector(".pager").hidden=!inPages;
+  $("btnHome").hidden=view==="home";
+  $("hdrNote").textContent=view==="home"?"قهوة مختصة بالـV60، من الوصفة لين الكوب.":"";
+  $("pager").innerHTML=PAGES.map(function(p,i){
+    return '<li><button type="button" data-i="'+i+'"'+(i===page&&inPages?' aria-current="step"':'')+(i<page&&inPages?' class="past"':'')+'><span class="k">0'+(i+1)+'</span><span class="t">'+p.name+'</span></button></li>';
+  }).join("");
+  document.querySelector(".navbar").hidden=!(inPages||wiz);
+  $("btnPrev").hidden=!inPages||page===0;
+  $("btnNext").textContent=wiz?"ابدأ التحضير بهذي الوصفة":(page<PAGES.length-1?"التالي: "+PAGES[page+1].name:"تحضيرة جديدة");
+  $("summary").hidden=!inPages||page===0;
+}
+function setView(v,pg){
+  view=v;if(typeof pg==="number")page=pg;
+  showPage();render();
+  try{window.scrollTo(0,0)}catch(e){}
+}
+function go(i){
+  page=Math.max(0,Math.min(PAGES.length-1,i));
+  showPage();
+  try{window.scrollTo(0,0)}catch(e){}
+}
+var plan=null;
+var T={running:false,base:0,start:0,timer:null,last:-2,tick:""};
+var audio=null;
+
+function method(){return METHODS.filter(function(m){return m.id===S.method})[0]||METHODS[0]}
+
+function compute(){
+  var amt=Math.max(1,Number(S.amount)||0),D,W;
+  if(S.mode==="water"){W=amt;D=W/S.ratio}else{D=amt;W=D*S.ratio}
+  var iceW=S.iced?W*S.icePct/100:0,hotW=W-iceW;
+  var m=method(),p=m.plan(D,hotW,{taste:S.taste,n:S.n,roast:S.roast,acid:(origin()||{p:[0]}).p[0]}),prev=0,last=p.steps.length-1;
+  p.steps.forEach(function(s,i){
+    s.ex=expectStep(i,p.steps.length,m);
+    if(S.iced){
+      s.fx+=" "+(i===0?"الثلج جاهز في السيرفر.":"المركّز ينزل على الثلج فيبرد فوراً، فتنحفظ الروائح والحموضة.");
+      if(i===last)s.fx+=" بعد النزول حرّك السيرفر لين يذوب الثلج.";
+    }
+    s.cum=Math.round(s.cum);
+    if(i===last)s.cum=Math.round(hotW);
+    s.add=s.cum-prev;prev=s.cum;
+  });
+  plan={D:D,W:W,m:m,steps:p.steps,end:p.end,ice:Math.round(iceW),hot:Math.round(hotW)};
+}
+
+function press(box,attr,val){
+  Array.prototype.forEach.call(box.querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",String(b.getAttribute(attr)===String(val)))});
+}
+
+function render(){
+  compute();
+  var m=plan.m,st=plan.steps,total=st[st.length-1].cum;
+  press($("originChips"),"data-id",S.origin);
+  var og=origin(),on=$("originNote");
+  on.hidden=!og;
+  if(og){
+    var om=METHODS.filter(function(x){return x.id===og.method})[0];
+    on.innerHTML='<p><b>النكهات المعتادة:</b> '+og.notes+'.</p><p>'+og.tip+'</p>'+
+      '<p class="applied">الوصفة المقترحة: ريشيو <span class="num">1:'+og.ratio+'</span>، تحميص '+ROAST_NAME[og.roast]+'، حرارة <span class="num">'+og.temp+'</span>، طريقة '+om.name+'. تقدر تغيّر أي شي منها.</p>';
+  }
+  var bc=$("bagCard"),bg=S.bag;
+  bc.hidden=!bg;
+  if(bg){
+    var rows=[],pr=PROCESS[bg.process];
+    var place=[bg.country_ar,bg.region_ar].filter(Boolean).join("، ");
+    if(place)rows.push(["الدولة",place]);
+    if(bg.producer)rows.push(["المزرعة",bg.producer]);
+    if(bg.variety)rows.push(["السلالة",bg.variety]);
+    if(pr||bg.process_ar)rows.push(["المعالجة",bg.process_ar||pr.name]);
+    if(ROAST_NAME[bg.roast])rows.push(["التحميص",ROAST_NAME[bg.roast]]);
+    if(bg.altitude)rows.push(["الارتفاع",bg.altitude]);
+    if(bg.notes_ar&&bg.notes_ar.length)rows.push(["النكهات",bg.notes_ar.join("، ")]);
+    if(bg.roast_date)rows.push(["تاريخ التحميص",bg.roast_date]);
+    bc.innerHTML='<h3><span>قرأت من الكيس</span><button type="button" class="link" id="bagClear">امسح</button></h3>'+
+      '<dl>'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+esc(r[1])+'</dd>'}).join("")+'</dl>'+
+      (pr&&pr.tip?'<p>'+pr.tip+'</p>':'')+
+      (bagOriginId(bg)?'':'<p>ما عندي وصفة جاهزة لهذي الدولة، فخليت إعداداتك مثل ما هي.</p>')+
+      (bg.confidence==="low"?'<p>القراءة مو أكيدة، تأكد من البيانات قبل لا تعتمد عليها.</p>':'');
+  }
+  press($("modeSeg"),"data-mode",S.mode);
+  press($("iceSeg"),"data-ice",S.iced?"1":"0");
+  press($("icePctSeg"),"data-p",S.icePct);
+  $("iceShare").hidden=!S.iced;
+  press($("roastSeg"),"data-roast",S.roast);
+  press($("methodChips"),"data-id",S.method);
+  press($("tasteSeg"),"data-taste",S.taste);
+  press($("strengthSeg"),"data-n",S.n);
+  press($("dialChips"),"data-id",S.dial);
+  $("amountLbl").textContent=S.mode==="water"?(S.iced?"الماء الكلي مع الثلج":"الماء"):"القهوة";
+  $("amount").step=S.mode==="water"?"1":"0.1";
+  var pre=S.mode==="water"?[200,250,300,500]:[12,15,18,20,30];
+  $("presets").innerHTML=pre.map(function(v){return '<button type="button" data-v="'+v+'">'+v+'</button>'}).join("");
+  $("ratioOut").textContent="1:"+S.ratio;
+  $("ratio").value=S.ratio;
+  $("tDose").innerHTML=r1(plan.D)+' <small>غ</small>';
+  $("tWater").innerHTML=Math.round(plan.W)+' <small>غ</small>';
+  $("tTemp").textContent=tempNow(m);
+  $("tGrind").textContent=grindNow(m);
+  $("mDesc").textContent=m.desc;
+  $("mMeta").innerHTML='<span>الوقت الكلي <b class="num">'+fmt(plan.end)+'</b></span><span>عدد الصبّات <b class="num">'+st.length+'</b></span><span>الطحن <b>'+grindNow(m)+'</b></span>';
+  var h="";
+  if(m.ratio!==S.ratio)h+='<span>الريشيو المعتاد لهذي الطريقة <span class="num">1:'+m.ratio+'</span></span><button type="button" class="link" id="useRatio">استخدمه</button>';
+  if(m.id==="osmo"&&S.roast!=="dark")h+='<span>هذي الطريقة معمولة للتحميص الغامق.</span>';
+  if(m.id!=="f46"&&m.id!=="sci")h+='<span>خيارات الطعم وعدد الصبّات تشتغل مع 4:6 والوصفة المخصصة.</span><button type="button" class="link" id="to46">اختر الوصفة المخصصة</button>';
+  $("mHint").innerHTML=h;
+  $("opts46").hidden=m.id!=="f46"&&m.id!=="sci";
+  var ice=$("iceNote");
+  ice.hidden=!plan.ice;
+  if(plan.ice)ice.innerHTML='نسخة مثلّجة: حط <b class="num">'+plan.ice+'</b> غ ثلج في السيرفر، وصب <b class="num">'+plan.hot+'</b> غ ماء حار على القهوة. صفّر الميزان بعد ما تحط الثلج والدريبر والقهوة. المشروب النهائي حوالي <b class="num">'+Math.round(plan.W-2*plan.D)+'</b> مل.';
+
+  buildCard();
+
+  var pf=profile(),names=[["acid","الحموضة"],["sweet","الحلاوة"],["body","القوام"],["strength","القوة"]];
+  $("meters").innerHTML=names.map(function(x){var v=pf[x[0]];return '<div class="meter'+(v>=7?' hi':'')+'"><span>'+x[1]+'</span><div class="track"><i style="width:'+v*10+'%"></i></div><span class="num">'+v+'/10</span></div>'}).join("");
+  $("cupText").textContent=cupSentence(pf);
+  $("cupEst").innerHTML='يطلع في الكوب تقريباً <span class="num">'+Math.max(0,Math.round(plan.W-2*plan.D))+'</span> مل، لأن القهوة تمسك حوالي ضعف وزنها ماء. هذا تقدير من الإعدادات، والبن نفسه له الكلمة الأخيرة.';
+
+  $("summary").innerHTML='<span><b class="num">'+r1(plan.D)+' g</b> قهوة</span><span><b class="num">'+Math.round(plan.W)+' g</b> ماء</span><span>ريشيو <b class="num">1:'+S.ratio+'</b></span><span>حرارة <b class="num">'+tempNow(m)+'</b></span>'+(page>1?'<span>'+m.name+'</span>':'')+(og?'<span>'+og.name+'</span>':'')+(S.iced?'<span>مثلّجة</span>':'');
+  var d=DIAL.filter(function(x){return x.id===S.dial})[0]||DIAL[0];
+  $("fix").innerHTML='<h3>'+d.name+'</h3><p>'+d.why+'</p><ol>'+d.fix.map(function(f){return '<li>'+f+'</li>'}).join("")+'</ol>';
+  $("btnSound").setAttribute("aria-pressed",String(S.sound));
+  $("btnSound").textContent=S.sound?"الصوت شغّال":"الصوت مطفي";
+  if(wiz)renderBuild();
+  paint();
+}
+
+/* Pour card: one cup that fills with each pour, a chip per pour, and the cup profile building up until the recipe is complete. */
+var PC={sel:0,pin:false,key:"",lastCur:-2};
+var END_FX="آخر القطرات فيها أثقل وأمرّ ما في القهوة. إذا تأخر النزول كثير، شيل الدريبر ولا تنتظر.";
+function cupBig(){
+  var cup="M42 112H128L121 200Q120 208 112 208H58Q50 208 49 200Z";
+  return '<svg viewBox="0 0 170 230" aria-hidden="true"><defs><clipPath id="pcClip"><path d="'+cup+'"/></clipPath></defs>'+
+    '<path class="dr" d="M28 14H142L106 74H64Z"/><path class="bed" d="M42 22H128L102 66H68Z"/>'+
+    '<rect x="66" y="74" width="38" height="8" rx="2" class="dr"/>'+
+    '<line class="stream" x1="85" y1="84" x2="85" y2="190"/>'+
+    '<g clip-path="url(#pcClip)"><rect class="liq" id="pcLiq" x="40" y="112" width="90" height="96" style="transform:scaleY(0)"/></g>'+
+    (plan.ice?'<g clip-path="url(#pcClip)"><rect class="cube" x="54" y="176" width="26" height="26" rx="4" transform="rotate(-8 67 189)"/><rect class="cube" x="84" y="180" width="26" height="24" rx="4" transform="rotate(6 97 192)"/><rect class="cube" x="70" y="152" width="24" height="24" rx="4" transform="rotate(14 82 164)"/></g>':'')+
+    '<path class="glass" d="'+cup+'"/><path class="glass" d="M127 126H140a14 14 0 0 1 0 38H123"/></svg>';
+}
+function buildCard(){
+  var st=plan.steps,n=st.length;
+  if(PC.sel>n)PC.sel=0;
+  $("pourCard").innerHTML='<div class="pc-top"><div class="pc-cup" id="pcCup">'+cupBig()+'</div>'+
+    '<div class="pc-side"><div class="cap">الميزان لازم يوصل</div><div class="pc-w"><span class="num" id="pcW">0</span><small>g</small></div>'+
+    '<div class="cap" id="pcOf"></div><div class="meters" id="pcMeters" style="margin-top:10px"></div></div></div>'+
+    '<div class="pc-chips" id="pcChips">'+st.map(function(s,i){return '<button type="button" data-i="'+i+'">'+(i+1)+'</button>'}).join("")+'<button type="button" data-i="'+n+'">النهاية</button></div>'+
+    '<div class="steps pc-detail" id="pcDetail" aria-live="polite"></div>';
+  PC.key="";
+}
+function partial(pf,f){
+  if(f>=1)return pf;
+  return {acid:Math.min(1,f*2.2)*pf.acid,sweet:Math.min(1,f*1.4)*pf.sweet,body:f*pf.body,strength:f*pf.strength};
+}
+function updateCard(started,finished,cur,e){
+  var st=plan.steps,n=st.length,total=st[n-1].cum;
+  if(cur!==PC.lastCur){PC.lastCur=cur;PC.pin=false}
+  var idx=PC.pin?PC.sel:(started?(finished?n:Math.max(0,cur)):PC.sel);
+  var chips=$("pcChips").children,cls=[],i;
+  for(i=0;i<=n;i++){
+    var c="";
+    if(started&&(finished||i<cur))c="done";else if(started&&i===cur)c="live";
+    cls.push(c);
+  }
+  var pouring=T.running&&cur>=0&&!finished&&(cur===n-1||e-st[cur].t<Math.min(20,(st[cur+1].t-st[cur].t)*0.6));
+  $("pcCup").classList.toggle("pouring",!!pouring);
+  var key=idx+"|"+cls.join(",");
+  if(key===PC.key)return;
+  PC.key=key;
+  for(i=0;i<=n;i++){chips[i].className=cls[i];chips[i].setAttribute("aria-pressed",String(i===idx))}
+  var f=idx>=n?1:st[idx].cum/total;
+  var liq=$("pcLiq");
+  liq.style.transform="scaleY("+(f*0.96).toFixed(3)+")";
+  liq.style.opacity=(0.45+0.55*f).toFixed(2);
+  $("pcW").textContent=idx>=n?total:st[idx].cum;
+  $("pcOf").textContent="من "+total+" g";
+  var pf=partial(profile(),f),names=[["acid","الحموضة"],["sweet","الحلاوة"],["body","القوام"],["strength","القوة"]];
+  $("pcMeters").innerHTML=names.map(function(x){var v=pf[x[0]];return '<div class="meter'+(v>=6.5?' hi':'')+'"><span>'+x[1]+'</span><div class="track"><i style="width:'+(v*10).toFixed(0)+'%"></i></div><span class="num">'+Math.round(v)+'/10</span></div>'}).join("");
+  var h;
+  if(idx<n){
+    var s=st[idx];
+    h='<div class="shead"><span class="num t">'+fmt(s.t)+'</span><span class="name">الصبّة '+(idx+1)+' من '+n+'</span><span class="num add">+'+s.add+' g</span></div>'+
+      '<p class="do">'+s.note+'</p><p class="fx"><b>تأثيرها</b>'+s.fx+'</p><p class="ex"><b>المتوقع</b>'+s.ex+'</p>'+
+      '<p class="pc-left">باقي <b class="num">'+(total-s.cum)+' g</b> لين تكتمل الوصفة. الكوب لسا يتكوّن.</p>';
+  }else{
+    h='<div class="shead"><span class="num t">'+fmt(plan.end)+'</span><span class="name">اكتملت الوصفة</span></div>'+
+      '<p class="fx"><b>تأثيرها</b>'+END_FX+'</p>'+
+      '<p class="ex"><b>المتوقع</b>القهوة بعد النزول مثل الرمل المبلول والسطح مستوي. إذا صارت طين فالطحنة ناعمة زيادة.'+(plan.ice?' والثلج يذوب ويخفف الكوب للقوة المضبوطة، وطعمه بارد ونظيف.':'')+'</p>'+
+      '<p class="pc-left"><b>النتيجة:</b> '+cupSentence(profile())+'</p>';
+  }
+  $("pcDetail").innerHTML=h;
+}
+$("pourCard").addEventListener("click",function(ev){
+  var b=ev.target.closest("#pcChips button");if(!b)return;
+  PC.sel=Number(b.getAttribute("data-i"));PC.pin=true;PC.key="";paint();
+});
+
+function elapsed(){return T.base+(T.running?(performance.now()-T.start)/1000:0)}
+
+function beep(freq,len,vol){
+  if(!S.sound||!audio)return;
+  try{
+    var o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;
+    o.frequency.value=freq;o.connect(g);g.connect(audio.destination);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.25,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+len);
+    o.start(t);o.stop(t+len+0.02);
+  }catch(e){}
+}
+
+function setCount(text,cap,isWord,frac){
+  var n=$("rCount");n.textContent=text;n.className=isWord?"n word":"n";
+  $("rCountCap").textContent=cap;
+  $("ringFg").setAttribute("stroke-dashoffset",(RING*(1-Math.max(0,Math.min(1,frac)))).toFixed(1));
+}
+
+function paint(){
+  var e=elapsed(),st=plan.steps,n=st.length,i,cur=-1;
+  var started=T.running||T.base!==0,finished=e>=plan.end;
+  if(started)for(i=0;i<n;i++)if(st[i].t<=e)cur=i;
+  var show=st[Math.max(0,cur)];
+  $("rClock").textContent=fmt(Math.floor(Math.max(0,e)));
+  $("rTarget").textContent=show.cum;
+  $("rStep").textContent=(finished?n:cur+1)+"/"+n;
+
+  var now,rem,span,nextIsPour=false;
+  if(!started){
+    setCount("جاهز","اضغط ابدأ",true,1);
+    now='<div class="do">أول صبّة <b>+'+st[0].add+' g</b></div><div class="l">بعد ما تضغط ابدأ يعدّ '+LEAD+' ثواني، ثم صب مع الصفارة.</div>';
+  }else if(e<0){
+    rem=-e;nextIsPour=true;
+    setCount(String(Math.ceil(rem)),"استعد",false,rem/LEAD);
+    now='<div class="do">استعد: أول صبّة <b>+'+st[0].add+' g</b></div><div class="l"><span>تأثيرها</span>'+st[0].fx+'</div>';
+  }else if(finished){
+    setCount("تم","بالعافية",true,0);
+    now='<div class="do">خلص الوقت</div><div class="l">المفروض النزول انتهى الحين. ذوق الكوب، ثم اضغط التالي لضبط الطعم.</div>';
+  }else{
+    var nx=st[cur+1],nextT=nx?nx.t:plan.end;
+    rem=nextT-e;span=nextT-st[cur].t;nextIsPour=!!nx;
+    var sec=Math.ceil(rem);
+    setCount(sec>=60?fmt(sec):String(sec),nx?"ثانية للصبّة الجاية":"لنهاية النزول",false,rem/span);
+    now='<div class="do">الصبّة '+(cur+1)+': صب <b>+'+st[cur].add+' g</b> لين يوصل الميزان <b>'+st[cur].cum+' g</b></div>'+
+        '<div class="l"><span>تأثيرها</span>'+st[cur].fx+'</div>'+
+        '<div class="l"><span>المتوقع</span>'+st[cur].ex+'</div>';
+  }
+  if($("rNow").innerHTML!==now)$("rNow").innerHTML=now;
+
+  updateCard(started,finished,cur,e);
+
+  if(T.running){
+    if(cur!==T.last){T.last=cur;if(cur>=0)beep(880,0.22)}
+    if(nextIsPour&&rem<=3&&rem>0){
+      var key=cur+":"+Math.ceil(rem);
+      if(key!==T.tick){T.tick=key;beep(440,0.07,0.15)}
+    }
+    if(finished){beep(520,0.6);stop()}
+  }
+  $("btnGo").textContent=T.running?"إيقاف مؤقت":(started&&!finished?"كمّل":"ابدأ التحضير");
+}
+
+function stop(){
+  if(T.running){T.base=elapsed();T.running=false}
+  clearInterval(T.timer);T.timer=null;paint();
+}
+function reset(){PC.pin=false;PC.sel=0;PC.lastCur=-2;PC.key="";T.running=false;clearInterval(T.timer);T.timer=null;T.base=0;T.last=-2;T.tick="";paint()}
+
+$("btnGo").addEventListener("click",function(){
+  if(T.running){stop();return}
+  if(T.base===0||elapsed()>=plan.end){T.base=-LEAD;T.last=-2;T.tick=""}
+  try{if(!audio){var AC=window.AudioContext||window.webkitAudioContext;if(AC)audio=new AC()}if(audio&&audio.state==="suspended")audio.resume()}catch(e){}
+  T.start=performance.now();T.running=true;
+  T.timer=setInterval(paint,100);paint();
+});
+$("btnReset").addEventListener("click",reset);
+$("btnSound").addEventListener("click",function(){S.sound=!S.sound;save();render()});
+
+function change(fn){fn();reset();save();render()}
+
+$("methodChips").innerHTML=METHODS.map(function(m){return '<button type="button" data-id="'+m.id+'">'+m.name+'</button>'}).join("");
+$("originChips").innerHTML='<button type="button" data-id="">بدون</button>'+ORIGINS.map(function(o){return '<button type="button" data-id="'+o.id+'">'+o.name+'</button>'}).join("");
+$("dialChips").innerHTML=DIAL.map(function(d){return '<button type="button" data-id="'+d.id+'">'+d.name+'</button>'}).join("");
+
+function onSeg(id,attr,fn){
+  $(id).addEventListener("click",function(ev){
+    var b=ev.target.closest("button");if(!b||!b.hasAttribute(attr))return;
+    fn(b.getAttribute(attr));
+  });
+}
+onSeg("modeSeg","data-mode",function(v){
+  if(v===S.mode)return;
+  change(function(){
+    compute();
+    S.amount=v==="water"?plan.W:plan.D; /* keep exact value so switching back and forth does not drift */
+    S.mode=v;$("amount").value=v==="water"?Math.round(S.amount):r1(S.amount);
+  });
+});
+onSeg("originChips","data-id",function(v){
+  change(function(){
+    S.origin=v;applyOrigin(origin());
+  });
+});
+
+/* Bag photo: Claude reads the label and returns JSON; the page maps it to an origin recipe. */
+var sampleFn=null,scanning=false;
+var BAG_PROMPT=[
+ "This is a photo of a specialty coffee bag or its label. Read ONLY what is printed on it. Do not guess anything that is not visible.",
+ "Reply with one JSON object and nothing else, with these keys:",
+ '"found": true if this is a coffee bag or label you can read, else false',
+ '"country_id": one of eth, kenya, rwanda, yemen, colombia, brazil, guatemala, costa, honduras, panama, indo, other, unknown (eth=Ethiopia, costa=Costa Rica, indo=Indonesia)',
+ '"country_ar": country name in Arabic, or ""',
+ '"region_ar": region or area in Arabic, or ""',
+ '"producer": farm, station or producer as printed, or ""',
+ '"variety": coffee variety as printed (e.g. Geisha, Heirloom, SL28), or ""',
+ '"process": one of washed, natural, honey, anaerobic, other, unknown',
+ '"process_ar": the process in Arabic as specifically as the bag states it, or ""',
+ '"roast": one of light, medium, dark, unknown (only if the bag states or clearly indicates it, e.g. filter roast = light, espresso roast = medium)',
+ '"altitude": altitude as printed, or ""',
+ '"notes_ar": array of the tasting notes printed on the bag, translated to Arabic (empty array if none)',
+ '"roast_date": roast date as printed, or ""',
+ '"confidence": high, medium or low'
+].join("\n");
+function shrink(file){
+  if(typeof createImageBitmap!=="function")return Promise.resolve(file);
+  return createImageBitmap(file).then(function(bmp){
+    var k=Math.min(1,1568/Math.max(bmp.width,bmp.height));
+    var c=document.createElement("canvas");
+    c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));
+    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    return new Promise(function(res){c.toBlob(function(b){res(b||file)},"image/jpeg",0.85)});
+  }).catch(function(){return file});
+}
+function scanState(t){$("scanState").textContent=t}
+function scanBag(file){
+  if(!sampleFn||scanning||!file)return;
+  scanning=true;$("btnScan").disabled=true;$("btnScan").textContent="أقرأ الكيس…";scanState("");
+  shrink(file).then(function(blob){
+    return sampleFn(BAG_PROMPT,{images:[blob],cache:false});
+  }).then(function(r){
+    var t=(r&&r.text)||"",a=t.indexOf("{"),z=t.lastIndexOf("}"),b=null;
+    try{b=JSON.parse(t.slice(a,z+1))}catch(e){}
+    if(!b||!b.found||(b.country_id==="unknown"&&b.process==="unknown"&&!(b.notes_ar&&b.notes_ar.length))){
+      scanState("ما قدرت أقرأ الكيس. صوّر الملصق من قريب وبإضاءة واضحة.");return;
+    }
+    if(!Array.isArray(b.notes_ar))b.notes_ar=[];
+    change(function(){
+      S.bag=b;S.origin=bagOriginId(b);applyOrigin(origin());
+      if(ROAST[b.roast])S.roast=b.roast;
+    });
+    scanState("تمت القراءة وضبطت الوصفة.");
+  }).catch(function(err){
+    var code=err&&err.code;
+    if(code==="not_granted"){$("scanBox").hidden=true;$("scanNote").hidden=false}
+    else if(code==="rate_limited")scanState("وصلت حد الاستخدام حالياً. جرب بعد شوي.");
+    else scanState("ما قدرت أقرأ الصورة. جرب مرة ثانية.");
+  }).then(function(){
+    scanning=false;$("btnScan").disabled=false;$("btnScan").textContent="صوّر كيس البن أو ارفع صورته";$("bagFile").value="";
+  });
+}
+$("btnScan").addEventListener("click",function(){$("bagFile").click()});
+$("bagFile").addEventListener("change",function(){scanBag(this.files&&this.files[0])});
+$("bagCard").addEventListener("click",function(ev){
+  if(ev.target.id==="bagClear"){S.bag=null;save();render();scanState("")}
+});
+(function(){
+  var none=function(){$("scanNote").hidden=false};
+  if(!(window.claude&&window.claude.use)){none();return}
+  window.claude.use("sample").then(function(fn){
+    if(!fn){none();return}
+    return Promise.resolve(fn.limits?fn.limits():{images:true}).then(function(l){
+      if(l&&l.images){sampleFn=fn;$("scanBox").hidden=false}else none();
+    });
+  }).catch(none);
+})();
+onSeg("iceSeg","data-ice",function(v){change(function(){S.iced=v==="1"})});
+onSeg("icePctSeg","data-p",function(v){change(function(){S.icePct=Number(v)})});
+onSeg("roastSeg","data-roast",function(v){change(function(){S.roast=v})});
+onSeg("methodChips","data-id",function(v){change(function(){S.method=v})});
+onSeg("tasteSeg","data-taste",function(v){change(function(){S.taste=v})});
+onSeg("strengthSeg","data-n",function(v){change(function(){S.n=Number(v)})});
+onSeg("dialChips","data-id",function(v){S.dial=v;save();render()});
+onSeg("presets","data-v",function(v){change(function(){S.amount=Number(v);$("amount").value=v})});
+$("mHint").addEventListener("click",function(ev){
+  if(ev.target.id==="useRatio")change(function(){S.ratio=method().ratio});
+  if(ev.target.id==="to46")change(function(){S.method="sci"});
+});
+$("amount").addEventListener("input",function(){
+  var v=parseFloat(this.value);if(!(v>0))return;
+  change(function(){S.amount=Math.min(v,1500)});
+});
+$("ratio").addEventListener("input",function(){var v=Number(this.value);change(function(){S.ratio=v})});
+
+/* Recipe builder: the answers in S.q decide every setting. buildApply() writes them into S, then the normal render shows the result. */
+var BQ_AMOUNTS={water:[200,250,300,400,500,600],coffee:[12,15,18,20,25,30]};
+var bwhy=[],bAuto=16;
+function qnorm(q){
+  if(q.mode!=="coffee")q.mode="water";
+  if(!(q.pours>=2&&q.pours<=6))q.pours=5;
+  if(q.ratio===undefined||q.ratio===""||isNaN(q.ratio))q.ratio=null;
+  if(!q.method)q.method="auto";
+  return q;
+}
+function mname(id){return METHODS.filter(function(m){return m.id===id})[0].name}
+function buildApply(){
+  var q=qnorm(S.q),og=ORIGINS.filter(function(o){return o.id===q.origin})[0]||null,mid,why=[];
+  var RN={light:"فاتح",medium:"وسط",dark:"غامق"}[q.roast];
+  if(q.method!=="auto"){
+    mid=q.method;why.push("الأسلوب اخترته أنت من الاقتراحات: "+mname(mid)+".");
+    if(mid!=="f46"&&mid!=="sci"&&(q.taste!=="balanced"||q.pours!==5))why.push("عدد الصبّات والموازنة بين الحموضة والحلاوة تشتغل مع 4:6 والوصفة المخصصة. في "+mname(mid)+" عدد الصبّات ثابت.");
+  }else{
+    mid="sci";
+    why.push("الوصفة مبنية على إعداداتك: التحميص ونوع البن والطعم وعدد الصبّات.");
+    if(og&&og.method!=="sci")why.push("اقتراح: الأسلوب المعتاد لبن "+og.name+" هو "+mname(og.method)+". تقدر تجربه من الاقتراحات تحت.");
+  }
+  var m=METHODS.filter(function(x){return x.id===mid})[0];
+  bAuto=Math.max(12,Math.min(18,Math.round((og?og.ratio:m.ratio)*2)/2));
+  var ratio=bAuto;
+  if(q.ratio!=null){ratio=Math.max(12,Math.min(18,q.ratio));why.push("الريشيو اخترته أنت: 1:"+ratio+".")}
+  else if(og)why.push("الريشيو بدأ من وصفة "+og.name+" (1:"+bAuto+").");
+  if(mid==="sci"||mid==="f46"){
+    why.push("التبليل والوقت: "+({light:"التحميص الفاتح كثيف ويحتاج تبليل أطول وصب أقوى",medium:"التحميص الوسط يحتاج تبليل ووقت قياسي",dark:"التحميص الغامق هش ويستخلص بسرعة، فالتبليل أقصر والصب أهدى"}[q.roast])+".");
+    why.push("الحرارة والطحن: "+({light:"حرارة عالية وطحن أنعم شوي عشان ما يطلع الكوب حامض",medium:"حرارة وطحن وسط",dark:"ماء أبرد وطحن أخشن عشان ما تطلع المرارة"}[q.roast])+" (تحميص "+RN+").");
+    why.push("الطعم: أول صبّتين ("+(q.taste==="sweet"?"الأولى أصغر فيميل الكوب للحلاوة":(q.taste==="bright"?"الأولى أكبر فتبرز الحموضة والنكهات":"متقاربتين فالكوب متوازن"))+")"+(og&&og.p[0]>=2?"، وبن "+og.name+" حموضته عالية فصغّرت الأولى شوي":(og&&og.p[0]<=-2?"، وبن "+og.name+" حموضته قليلة فكبّرت الأولى شوي":""))+".");
+    why.push("القوة: "+q.pours+" صبّات. الصبّات الأكثر تزيد الاستخلاص والقوة، والأقل تعطي كوب أخف.");
+  }
+  S.origin=q.origin;S.roast=q.roast;S.method=mid;S.ratio=ratio;S.taste=q.taste;S.n=q.pours-2;
+  S.mode=q.mode;S.amount=q.amount;S.iced=!!q.iced;
+  bwhy=why;
+}
+function buildSet(fn){fn(qnorm(S.q));buildApply();reset();save();render()}
+$("bOrigin").innerHTML='<button type="button" data-v="">ما أدري</button>'+ORIGINS.map(function(o){return '<button type="button" data-v="'+o.id+'">'+o.name+'</button>'}).join("");
+$("bMethod").innerHTML='<button type="button" data-v="auto">اقترح لي</button>'+METHODS.map(function(m){return '<button type="button" data-v="'+m.id+'">'+m.name+'</button>'}).join("");
+function meterRows(pf){
+  var names=[["acid","الحموضة"],["sweet","الحلاوة"],["body","القوام"],["strength","القوة"]];
+  return names.map(function(x){var v=pf[x[0]];return '<div class="meter'+(v>=7?' hi':'')+'"><span>'+x[1]+'</span><div class="track"><i style="width:'+v*10+'%"></i></div><span class="num">'+v+'/10</span></div>'}).join("");
+}
+function renderBuild(){
+  var q=qnorm(S.q),m=plan.m,pf=profile();
+  press($("bMode"),"data-v",q.mode);press($("bOrigin"),"data-v",q.origin);press($("bRoast"),"data-v",q.roast);
+  press($("bTaste"),"data-v",q.taste);press($("bPours"),"data-v",q.pours);press($("bMethod"),"data-v",q.method);press($("bIce"),"data-v",q.iced?"1":"0");
+  var pre=BQ_AMOUNTS[q.mode];
+  $("bAmount").innerHTML=pre.map(function(v){return '<button type="button" data-v="'+v+'" aria-pressed="'+(Number(q.amount)===v)+'">'+v+'</button>'}).join("");
+  var inp=$("bAmt");inp.step=q.mode==="water"?"1":"0.1";
+  if(document.activeElement!==inp)inp.value=q.mode==="water"?Math.round(q.amount):r1(q.amount);
+  $("bRatio").value=S.ratio;$("bRatioOut").textContent="1:"+S.ratio;
+  $("bRatioNote").textContent=q.ratio==null?"الريشيو مقترح تلقائياً (1:"+bAuto+")":"المقترح 1:"+bAuto+" وأنت مغيّره";
+  $("bRatioAuto").hidden=q.ratio==null;
+  $("bLive").innerHTML='<div class="bl-top"><span><b class="num">'+r1(plan.D)+' g</b> قهوة</span><span><b class="num">'+Math.round(plan.W)+' g</b> ماء</span><span>ريشيو <b class="num">1:'+S.ratio+'</b></span><span>'+m.name+' · <b class="num">'+plan.steps.length+'</b> صبّات</span></div>'+
+    '<div class="bl-m">'+[["acid","حموضة"],["sweet","حلاوة"],["body","قوام"],["strength","قوة"]].map(function(x){var v=pf[x[0]];return '<div class="blm'+(v>=7?' hi':'')+'"><span>'+x[1]+' <b class="num">'+v+'</b></span><div class="track"><i style="width:'+v*10+'%"></i></div></div>'}).join("")+'</div>';
+  $("bResult").innerHTML='<h3>النتيجة المتوقعة</h3><div class="meters">'+meterRows(pf)+'</div><p style="margin:0 0 12px">'+cupSentence(pf)+'</p><div class="tiles">'+
+    '<div class="tile main"><span class="lbl">القهوة</span><div class="v num">'+r1(plan.D)+' <small>غ</small></div></div>'+
+    '<div class="tile main"><span class="lbl">الماء</span><div class="v num">'+Math.round(plan.W)+' <small>غ</small></div></div>'+
+    '<div class="tile"><span class="lbl">الأسلوب</span><div class="v" style="font-size:16px">'+m.name+'</div></div>'+
+    '<div class="tile"><span class="lbl">الريشيو</span><div class="v num">1:'+S.ratio+'</div></div>'+
+    '<div class="tile"><span class="lbl">حرارة الماء</span><div class="v num">'+tempNow(m)+'</div></div>'+
+    '<div class="tile"><span class="lbl">الطحن</span><div class="v" style="font-size:16px">'+grindNow(m)+'</div></div>'+
+    '<div class="tile"><span class="lbl">عدد الصبّات</span><div class="v num">'+plan.steps.length+'</div></div>'+
+    '<div class="tile"><span class="lbl">الوقت الكلي</span><div class="v num">'+fmt(plan.end)+'</div></div></div>'+
+    '<div class="fix"><p>ليش هذي الوصفة:</p><ol>'+bwhy.map(function(w){return '<li>'+esc(w)+'</li>'}).join("")+'</ol></div>';
+}
+onSeg("bMode","data-v",function(v){buildSet(function(q){if(q.mode!==v){q.amount=v==="water"?plan.W:plan.D;q.mode=v}})});
+onSeg("bAmount","data-v",function(v){buildSet(function(q){q.amount=Number(v)})});
+$("bAmt").addEventListener("input",function(){var v=parseFloat(this.value);if(!(v>0))return;buildSet(function(q){q.amount=Math.min(v,1500)})});
+onSeg("bOrigin","data-v",function(v){buildSet(function(q){q.origin=v;q.ratio=null})});
+onSeg("bRoast","data-v",function(v){buildSet(function(q){q.roast=v})});
+onSeg("bTaste","data-v",function(v){buildSet(function(q){q.taste=v})});
+onSeg("bPours","data-v",function(v){buildSet(function(q){q.pours=Number(v)})});
+onSeg("bMethod","data-v",function(v){buildSet(function(q){q.method=v;q.ratio=null})});
+onSeg("bIce","data-v",function(v){buildSet(function(q){q.iced=v==="1"})});
+$("bRatio").addEventListener("input",function(){var v=Number(this.value);buildSet(function(q){q.ratio=v})});
+$("bRatioAuto").addEventListener("click",function(){buildSet(function(q){q.ratio=null})});
+
+function openBuilder(){buildApply();reset();save();setView("build")}
+$("openBuild").addEventListener("click",openBuilder);
+$("goBuild").addEventListener("click",openBuilder);
+$("goReady").addEventListener("click",function(){RSEL.o="";RSEL.m="";readyPaint();setView("ready")});
+$("btnHome").addEventListener("click",function(){reset();setView("home")});
+$("bBack").addEventListener("click",function(){setView("pages",0)});
+
+/* Ready recipes: starting points by origin or by method. Picking one applies it and lands on the Method page (options + expected cup). */
+$("readyOrigins").innerHTML=ORIGINS.map(function(o){
+  var mn=METHODS.filter(function(m){return m.id===o.method})[0].name;
+  return '<button type="button" class="rc" data-o="'+o.id+'"><b>'+o.name+'</b><span>'+o.notes+'</span><i>1:'+o.ratio+' · '+ROAST_NAME[o.roast]+' · '+mn+'</i></button>';
+}).join("");
+$("readyMethods").innerHTML=METHODS.map(function(m){
+  return '<button type="button" class="rc" data-m="'+m.id+'"><b>'+m.name+'</b><span>'+m.desc.split(/[.،]/)[0]+'.</span><i>1:'+m.ratio+' · '+m.grind+'</i></button>';
+}).join("");
+/* Pick a bean AND/OR a method, then continue. With both, the bean sets ratio/roast and the chosen method overrides the bean's usual one. */
+var RSEL={o:"",m:""};
+function readyPaint(){
+  Array.prototype.forEach.call($("ready").querySelectorAll(".rc"),function(b){
+    var on=b.getAttribute("data-o")?b.getAttribute("data-o")===RSEL.o:b.getAttribute("data-m")===RSEL.m;
+    b.setAttribute("aria-pressed",String(on));
+  });
+  var og=ORIGINS.filter(function(o){return o.id===RSEL.o})[0],mm=METHODS.filter(function(m){return m.id===RSEL.m})[0];
+  var parts=[];if(og)parts.push("البن: <b>"+og.name+"</b>");if(mm)parts.push("الطريقة: <b>"+mm.name+"</b>");
+  $("readySel").innerHTML=parts.length?parts.join(" · "):"اختر بن، أو طريقة، أو الاثنين";
+  $("readyGo").disabled=!parts.length;
+}
+$("ready").addEventListener("click",function(ev){
+  var b=ev.target.closest(".rc");if(!b)return;
+  var oid=b.getAttribute("data-o"),mid=b.getAttribute("data-m");
+  if(oid)RSEL.o=RSEL.o===oid?"":oid;else RSEL.m=RSEL.m===mid?"":mid;
+  readyPaint();
+});
+$("readyGo").addEventListener("click",function(){
+  if(!RSEL.o&&!RSEL.m)return;
+  change(function(){
+    if(RSEL.o){S.origin=RSEL.o;applyOrigin(origin())}else S.origin="";
+    if(RSEL.m){S.method=RSEL.m;if(!RSEL.o)S.ratio=method().ratio}
+  });
+  setView("pages",1);
+});
+
+$("pager").addEventListener("click",function(ev){
+  var b=ev.target.closest("button");if(b){view="pages";go(Number(b.getAttribute("data-i")));showPage();render()}
+});
+$("btnPrev").addEventListener("click",function(){go(page-1);render()});
+$("btnNext").addEventListener("click",function(){
+  if(wiz){setView("pages",2);return}
+  if(page===PAGES.length-1){reset();setView("home");return}
+  go(page+1);
+  render();
+});
+if(hot&&hot.data&&typeof hot.data.page==="number")page=hot.data.page;
+$("amount").value=S.amount;
+showPage();
+render();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+</script>
+</body>
+</html>
